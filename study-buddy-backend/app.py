@@ -72,12 +72,14 @@ def chat():
     data = request.get_json()
     user_question = data.get('question')
 
+    chat_history = data.get('history', [])  
+
     if not user_question:
         return jsonify({"error": "No question provided."}), 400
     
     try:
         retrieved_chunks = retrieve_from_pinecone(user_question)
-        final_answer = generate_answer(retrieved_chunks, user_question)
+        final_answer = generate_answer(retrieved_chunks, user_question, chat_history)
 
         return jsonify({"answer": final_answer, "sources": retrieved_chunks}), 200
 

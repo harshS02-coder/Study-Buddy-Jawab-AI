@@ -131,7 +131,7 @@ def retrieve_from_pinecone(query: str, top_k: int = 5) -> list[str]:
     return relevant_chunks
 
 #generation
-def generate_answer(query:str, context_chunks:list[str])->str:
+def generate_answer(query:str, context_chunks:list[str], chat_history)->str:
 
     print("generating final answer..")
     api_key = os.getenv("GOOGLE_API_KEY")
@@ -143,10 +143,21 @@ def generate_answer(query:str, context_chunks:list[str])->str:
 
     context = "\n".join(context_chunks)
 
+    #for chat history
+    history_text = ""
+    for msg in chat_history:
+        role = 'User' if msg['sender'] == 'user' else 'Assistant'
+        history_text += f"{role}: {msg['text']}\n"
+
     prompt = f"""
     You are a helpful study assistant. Use only the following context to answer the user's question.
+    The context is the most relevant information found in the document.
+    The conversation history provides context for follow-up questions.
     If the answer is not found in the context, say "I couldn't find an answer in the provided document."
 
+    Conversation History:
+    {history_text}
+    
     Context:
     {context}
 

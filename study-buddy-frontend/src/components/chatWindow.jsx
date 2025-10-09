@@ -39,15 +39,20 @@ function ChatWindow() {
     if (!input.trim()) return;
 
     const userMessage = { sender: 'user', text: input };
-    setMessages(prev => [...prev, userMessage]);
+
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
     setInput('');
     setIsLoading(true);
 
     try {
+
+      const history = updatedMessages.slice(-5,-1);
+
       const response = await fetch('http://127.0.0.1:5300/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: input }),
+        body: JSON.stringify({ question: input, history: history }),
       });
       const data = await response.json();
 
