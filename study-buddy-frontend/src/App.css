@@ -137,3 +137,32 @@ h1, h2 {
 .source-chunk p {
   margin: 0;
 }
+
+/* src/App.css (add these styles at the end) */
+
+.App-header {
+  /* Use Flexbox to manage layout */
+  display: flex;
+  justify-content: space-between; /* Puts space between items */
+  align-items: center; /* Vertically aligns items */
+  
+  /* These are your existing styles */
+  border-bottom: 1px solid #eee;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+}
+
+.new-doc-button {
+  background-color: #f1f1f1;
+  border: 1px solid #ccc;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  /* Add a little margin for spacing */
+  margin-left: 20px; 
+}
+
+.new-doc-button:hover {
+  background-color: #e0e0e0;
+}

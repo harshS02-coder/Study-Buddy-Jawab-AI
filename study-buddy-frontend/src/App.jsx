@@ -11,10 +11,19 @@ function App() {
     setIsFileUploaded(true);
   };
 
+  const handleNewDocument = () => {
+    window.location.reload();
+  };
+
   return (
     <div className="App">
       <header className="App-header">
         <h1>Study Buddy-Jawab AI</h1>
+        {isFileUploaded && (
+          <button onClick={handleNewDocument} className="new-doc-button">
+            Upload New Document
+          </button>
+        )}
       </header>
       <main>
         {!isFileUploaded ? (

@@ -70,6 +70,7 @@ print("Upload endpoint is ready.")
 def chat():
     print("Received a chat Request")
     data = request.get_json()
+    print(f"REeceived data: {data}")
     user_question = data.get('question')
 
     chat_history = data.get('history', [])  
