@@ -1,0 +1,95 @@
+/* src/App.css */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f0f2f5;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+}
+.App {
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.App-header {
+    text-align: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+}
+h1, h2 {
+    color: #1a73e8;
+}
+
+/* src/App.css (add these styles at the end) */
+
+.chat-window {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  height: 60vh; /* 60% of the viewport height */
+}
+
+.messages-area {
+  flex-grow: 1;
+  overflow-y: auto; /* Make it scrollable */
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.message {
+  padding: 10px 15px;
+  border-radius: 18px;
+  max-width: 70%;
+  word-wrap: break-word;
+}
+
+.message.user {
+  background-color: #1a73e8;
+  color: white;
+  align-self: flex-end; /* Align user messages to the right */
+}
+
+.message.ai {
+  background-color: #e9e9eb;
+  color: black;
+  align-self: flex-start; /* Align AI messages to the left */
+}
+
+.message p {
+  margin: 0;
+}
+
+.input-area {
+  display: flex;
+  padding-top: 10px;
+  border-top: 1px solid #ccc;
+}
+
+.input-area input {
+  flex-grow: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  margin-right: 10px;
+}
+
+.input-area button {
+  padding: 10px 20px;
+  border: none;
+  background-color: #1a73e8;
+  color: white;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.input-area button:disabled {
+  background-color: #9ac3f9;
+}

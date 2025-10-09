@@ -1,0 +1,15 @@
+#pyhton virtual environment
+venv/
+__pycache__/
+
+#API keys
+.env 
+
+#Upload folder
+Upload_path/
+
+#Local database
+chroma_db/
+
+#frontend dependencies
+study-buddy-frontend/node_modules/
