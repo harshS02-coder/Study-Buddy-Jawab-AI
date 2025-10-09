@@ -79,7 +79,7 @@ def chat():
         retrieved_chunks = retrieve_from_pinecone(user_question)
         final_answer = generate_answer(retrieved_chunks, user_question)
 
-        return jsonify({"answer": final_answer}), 200
+        return jsonify({"answer": final_answer, "sources": retrieved_chunks}), 200
 
     except Exception as e:
         print(f"An error ocurred: {e}")

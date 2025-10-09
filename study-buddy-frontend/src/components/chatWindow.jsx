@@ -1,6 +1,33 @@
 // src/components/ChatWindow.jsx
 import React, { useState } from 'react';
 
+// New sub-component for displaying sources
+function Sources({ chunks }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  if (!chunks || chunks.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="sources-container">
+      <button onClick={() => setIsOpen(!isOpen)} className="sources-button">
+        {isOpen ? 'Hide Sources' : 'Show Sources'}
+      </button>
+      {isOpen && (
+        <div className="sources-content">
+          <h4>Sources:</h4>
+          {chunks.map((chunk, index) => (
+            <div key={index} className="source-chunk">
+              <p>{chunk}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ChatWindow() {
   const [messages, setMessages] = useState([
     { sender: 'ai', text: 'I have read your document. Ask me anything!' }
@@ -26,7 +53,8 @@ function ChatWindow() {
 
       const aiMessage = { 
         sender: 'ai', 
-        text: data.answer || 'Sorry, I encountered an error.' 
+        text: data.answer || 'Sorry, I encountered an error.',
+        sources: data.sources // <-- Store the sources with the message
       };
       setMessages(prev => [...prev, aiMessage]);
 
@@ -49,8 +77,13 @@ function ChatWindow() {
     <div className="chat-window">
       <div className="messages-area">
         {messages.map((msg, index) => (
-          <div key={index} className={`message ${msg.sender}`}>
-            <p>{msg.text}</p>
+          // We wrap each message in a container for better layout
+          <div key={index} className={`message-container ${msg.sender}`}>
+            <div className={`message ${msg.sender}`}>
+              <p>{msg.text}</p>
+            </div>
+            {/* If the message is from the AI, show the Sources component */}
+            {msg.sender === 'ai' && <Sources chunks={msg.sources} />}
           </div>
         ))}
         {isLoading && <div className="message ai"><p>Thinking...</p></div>}
