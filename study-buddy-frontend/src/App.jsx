@@ -2,10 +2,14 @@
 import React, { useEffect, useState } from 'react';
 import FileUpload from './components/FileUpload';
 import ChatWindow from './components/chatWindow';
+import Navbar from './components/Navbar';
+import MainContent from './components/MainContent';
 import './App.css';
 
 function App() {
   const [isFileUploaded, setIsFileUploaded] = useState(false);
+  const [activeMode, setActiveMode] = useState('study');
+
   const [theme, setTheme] = useState(() => {
     const stored = typeof window !== 'undefined' ? localStorage.getItem('theme') : null;
     if (stored === 'light' || stored === 'dark') return stored;
@@ -22,13 +26,13 @@ function App() {
     setIsFileUploaded(true);
   };
 
-  const handleNewDocument = () => {
-    window.location.reload();
-  };
+  // const handleNewDocument = () => {
+  //   window.location.reload();
+  // };
 
   return (
     <div className="App">
-      <header className="App-header">
+      {/* <header className="App-header">
         <div className="brand">
           <span className="brand-icon" aria-hidden>
             📚
@@ -54,9 +58,17 @@ function App() {
             </button>
           )}
         </div>
-      </header>
+      </header> */}
 
-      <main className="content">
+      <Navbar
+        activeMode={activeMode}
+        setActiveMode={setActiveMode}
+        theme={theme}
+        setTheme={setTheme}
+      />
+
+
+      {/* <main className="content">
         {!isFileUploaded ? (
           <div className="grid">
             <section className="glass-card upload-card">
@@ -91,7 +103,12 @@ function App() {
             <ChatWindow />
           </section>
         )}
-      </main>
+      </main> */}
+      <MainContent 
+        isFileUploaded={isFileUploaded}
+        handleUploadSuccess={handleUploadSuccess}
+        activeMode={activeMode}
+      />
 
       <footer className="App-footer">
         <span>Built for focused learning • Stay curious ✨</span>

@@ -28,7 +28,7 @@ function Sources({ chunks }) {
   );
 }
 
-function ChatWindow() {
+function ChatWindow({ activeMode }) {
   const [messages, setMessages] = useState([
     { sender: 'ai', text: 'I have read your document. Ask me anything!' }
   ]);
@@ -52,7 +52,7 @@ function ChatWindow() {
       const response = await fetch('http://127.0.0.1:5300/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: input, history: history }),
+        body: JSON.stringify({ question: input, history: history , use_case: activeMode }),
       });
       const data = await response.json();
 

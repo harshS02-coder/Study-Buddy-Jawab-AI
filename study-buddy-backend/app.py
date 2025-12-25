@@ -21,6 +21,8 @@ print("Flask app initialized.")
 def upload_and_process():
     print("Received a file upload request.")
 
+    use_case = request.form.get('use_case', 'study')
+
     #base cases
     if 'file' not in request.files:
         return jsonify({"error": "No selected file"}),400
@@ -42,7 +44,7 @@ def upload_and_process():
             t_total_start = time.perf_counter()
 
             t0 = time.perf_counter()
-            text = load_and_extract_text(filepath)
+            text = load_and_extract_text(filepath) 
             t1 = time.perf_counter()
             extract_ms = round((t1 - t0) * 1000)
 
@@ -50,21 +52,21 @@ def upload_and_process():
                 return jsonify({"error": "Failed to extract, need text file.."}),400
 
             t0 = time.perf_counter()
-            chunks = chunk_text(text)
+            chunks = chunk_text(text, use_case=use_case)
             t1 = time.perf_counter()
             chunk_ms = round((t1 - t0) * 1000)
             if not chunks:
                 return jsonify({"error": "Failed to chunk the text."}),400
 
             t0 = time.perf_counter()
-            embeddings = create_embedding(chunks)
+            embeddings = create_embedding(chunks, use_case=use_case)
             t1 = time.perf_counter()
             embed_ms = round((t1 - t0) * 1000)
             if embeddings is None:
                 return jsonify({"error": "Failed to create embeddings."}),400
             
             t0 = time.perf_counter()
-            store_in_pinecone(chunks, embeddings)
+            store_in_pinecone(chunks, embeddings, use_case=use_case)
             t1 = time.perf_counter()
             upsert_ms = round((t1 - t0) * 1000)
 
@@ -97,6 +99,7 @@ print("Upload endpoint is ready.")
 def chat():
     print("Received a chat Request")
     data = request.get_json()
+    use_case = data.get('use_case', 'study')
     # print(f"Received data: {data}")
     user_question = data.get('question')
 
@@ -108,9 +111,9 @@ def chat():
     try:
         from file_processor import retrieve_from_pinecone, generate_answer
 
-        retrieved_chunks = retrieve_from_pinecone(user_question)
+        retrieved_chunks = retrieve_from_pinecone(user_question, use_case=use_case)
         # generate_answer expects (query:str, context_chunks:list[str], chat_history)
-        final_answer = generate_answer(user_question, retrieved_chunks, chat_history)
+        final_answer = generate_answer(user_question, retrieved_chunks, chat_history, use_case=use_case)
 
         return jsonify({"answer": final_answer, "sources": retrieved_chunks}), 200
 

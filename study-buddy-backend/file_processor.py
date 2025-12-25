@@ -239,8 +239,42 @@ def load_and_extract_text(file_path: str) -> str | None:
 # -------------------------------
 # Chunking
 # -------------------------------
-def chunk_text(text: str) -> list[str]:
-    print("Chunking text...")
+
+#invoice chunking logic
+def invoice_chunker(text: str) -> list[str]:
+    sections = []
+    keywords = [
+        "invoice",
+        "bill to",
+        "vendor",
+        "total",
+        "tax",
+        "gst",
+        "amount",
+        "payment"
+    ]
+
+    lines = text.split("\n")
+    buffer = ""
+
+    for line in lines:
+        buffer += line + " "
+        if any(k in line.lower() for k in keywords):
+            sections.append(buffer.strip())
+            buffer = ""
+
+    if buffer.strip():
+        sections.append(buffer.strip())
+
+    return sections
+
+
+def chunk_text(text: str, use_case:str = "study") -> list[str]:
+    print(f"Chunking text... {use_case}")
+
+    if(use_case == "invoice"):
+        return invoice_chunker(text)
+    
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=200,
@@ -253,12 +287,12 @@ def chunk_text(text: str) -> list[str]:
 # -------------------------------
 # Embedding Creation (CACHED)
 # -------------------------------
-def create_embedding(chunks: list[str]):
+def create_embedding(chunks: list[str], use_case:str = "study"):
     print("Creating embeddings with cache...")
     embeddings = []
 
     for chunk in tqdm(chunks):
-        key = f"embed:{text_hash(chunk)}"
+        key = f"{use_case}:embed:{text_hash(chunk)}"
         cached = redis_client.get(key)
 
         if cached:
@@ -274,7 +308,7 @@ def create_embedding(chunks: list[str]):
 # -------------------------------
 # Store in Pinecone
 # -------------------------------
-def store_in_pinecone(chunks: list[str], embeddings):
+def store_in_pinecone(chunks: list[str], embeddings, use_case:str = "study"):
     print("Storing vectors in Pinecone...")
 
     api_key = os.getenv("PINECONE_API_KEY")
@@ -297,15 +331,15 @@ def store_in_pinecone(chunks: list[str], embeddings):
 
     batch_size = 100
     for i in tqdm(range(0, len(vectors), batch_size)):
-        index.upsert(vectors=vectors[i:i + batch_size])
+        index.upsert(vectors=vectors[i:i + batch_size], namespace=use_case)
 
     print("Pinecone upsert complete.")
 
 # -------------------------------
 # Retrieval (CACHED)
 # -------------------------------
-def retrieve_from_pinecone(query: str, top_k: int = 5) -> list[str]:
-    cache_key = f"retrieval:{normalize_query(query)}"
+def retrieve_from_pinecone(query: str, top_k: int = 5, use_case:str = "study") -> list[str]:
+    cache_key = f"{use_case}:retrieval:{normalize_query(query)}"
     cached = redis_client.get(cache_key)
 
     if cached:
@@ -329,7 +363,8 @@ def retrieve_from_pinecone(query: str, top_k: int = 5) -> list[str]:
     results = index.query(
         vector=query_embedding,
         top_k=top_k,
-        include_metadata=True
+        include_metadata=True,
+        namespace=use_case
     )
 
     chunks = [m["metadata"]["text"] for m in results["matches"]]
@@ -345,15 +380,67 @@ def retrieve_from_pinecone(query: str, top_k: int = 5) -> list[str]:
 # -------------------------------
 # Answer Generation (CACHED)
 # -------------------------------
-def generate_answer(query: str, context_chunks: list[str], chat_history) -> str:
-    cache_key = f"answer:{answer_hash(query, context_chunks)}"
+# def generate_answer(query: str, context_chunks: list[str], chat_history, use_case:str = "study") -> str:
+#     cache_key = f"{use_case}:answer:{answer_hash(query, context_chunks)}"
+#     cached = redis_client.get(cache_key)
+
+#     if cached:
+#         print("Answer cache HIT")
+#         return cached
+
+#     print("Answer cache MISS → calling Gemini")
+
+#     api_key = os.getenv("GOOGLE_API_KEY")
+#     if not api_key:
+#         return "GOOGLE_API_KEY not set."
+
+#     genai.configure(api_key=api_key)
+#     model = genai.GenerativeModel("gemini-2.5-flash")
+
+#     context = "\n".join(context_chunks)
+
+#     history_text = ""
+#     for msg in chat_history:
+#         role = "User" if msg["sender"] == "user" else "Assistant"
+#         history_text += f"{role}: {msg['text']}\n"
+
+#     prompt = f"""
+# You are a helpful study assistant.
+# Answer strictly using the provided context.
+
+# Conversation History:
+# {history_text}
+
+# Context:
+# {context}
+
+# Question:
+# {query}
+# """
+
+#     try:
+#         response = model.generate_content(prompt)
+#         redis_client.setex(cache_key, 1800, response.text)  # 30 min
+#         return response.text
+#     except Exception as e:
+#         return f"Generation error: {e}"
+
+#multipurpose code with use_case:
+
+def generate_answer(
+    query: str,
+    context_chunks: list[str],
+    chat_history,
+    use_case: str = "study"
+) -> str:
+    cache_key = f"{use_case}:answer:{answer_hash(query, context_chunks)}"
     cached = redis_client.get(cache_key)
 
     if cached:
-        print("Answer cache HIT")
-        return cached
+        print("⚡ Answer cache HIT")
+        return cached.decode("utf-8")  # Redis returns bytes
 
-    print("Answer cache MISS → calling Gemini")
+    print("🐢 Answer cache MISS → calling Gemini")
 
     api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
@@ -364,14 +451,35 @@ def generate_answer(query: str, context_chunks: list[str], chat_history) -> str:
 
     context = "\n".join(context_chunks)
 
+    # Build conversation history
     history_text = ""
     for msg in chat_history:
         role = "User" if msg["sender"] == "user" else "Assistant"
         history_text += f"{role}: {msg['text']}\n"
 
-    prompt = f"""
+    # 🔁 Use-case–specific system prompt
+    
+    if use_case == "invoice":
+        print("Using invoice system prompt.")
+        system_prompt = """
+You are an AI invoice analyst.
+Answer ONLY using the provided invoice context.
+Extract exact values (amounts, dates, invoice numbers).
+If the answer is not present, reply:
+"Not found in the provided invoice."
+Do NOT make assumptions.
+"""
+    else:  # study (default)
+        print("Using study system prompt.")
+        system_prompt = """
 You are a helpful study assistant.
-Answer strictly using the provided context.
+Explain concepts clearly and concisely
+using ONLY the provided context.
+If the answer is not found, say so explicitly.
+"""
+
+    prompt = f"""
+{system_prompt}
 
 Conversation History:
 {history_text}
@@ -385,10 +493,16 @@ Question:
 
     try:
         response = model.generate_content(prompt)
-        redis_client.setex(cache_key, 1800, response.text)  # 30 min
-        return response.text
+        answer_text = response.text.strip()
+
+        # Cache for 30 minutes
+        redis_client.setex(cache_key, 1800, answer_text)
+
+        return answer_text
+
     except Exception as e:
         return f"Generation error: {e}"
+
 
 
 

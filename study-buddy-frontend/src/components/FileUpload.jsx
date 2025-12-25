@@ -1,7 +1,7 @@
 // src/components/FileUpload.jsx
 import React, { useState } from 'react';
 
-function FileUpload({ onUploadSuccess }) {
+function FileUpload({ onUploadSuccess, activeMode }) {
   const [file, setFile] = useState(null);
   const [message, setMessage] = useState('');
   const [isUploading, setIsUploading] = useState(false);
@@ -21,6 +21,7 @@ function FileUpload({ onUploadSuccess }) {
     setMessage('Uploading and processing file...');
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('use_case', activeMode);
 
     try {
       const response = await fetch('http://127.0.0.1:5300/upload', {
