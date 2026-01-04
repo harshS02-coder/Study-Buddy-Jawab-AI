@@ -1,6 +1,7 @@
 #pyhton virtual environment
 venv/
 __pycache__/
+myenv/
 
 #API keys
 .env 

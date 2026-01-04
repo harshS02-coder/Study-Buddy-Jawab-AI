@@ -397,15 +397,6 @@ if __name__ == "__main__":
 
         final_answer = generate_answer(user_question, retrieved_chunks)
         
-        # Print the results
-        # print("\n--- Top 5 Relevant Chunks ---")
-        # if not retrieved_chunks:
-        #     print("No relevant chunks found.")
-        # else:
-        #     for i, chunk in enumerate(retrieved_chunks):
-        #         print(f"Chunk {i+1}:\n{chunk}\n---")
-        # print("\n" + "="*50 + "\n") # Separator for clarity
-
         print(f"Final Answer:", final_answer)
         print("\n"+ "="*50 + "\n")
 
