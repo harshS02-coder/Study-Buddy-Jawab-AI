@@ -1,9 +1,12 @@
 
-# added caching 
+
 import fitz
 import os
 import json
 import hashlib
+import requests
+from io import BytesIO
+
 from dotenv import load_dotenv
 from tqdm.auto import tqdm
 
@@ -20,7 +23,6 @@ api_key = os.getenv("PINECONE_API_KEY")
 environment = os.getenv("PINECONE_ENVIRONMENT")
 if not api_key or not environment:
     print("Pinecone credentials missing.")
-    # return []
 
 pc = Pinecone(api_key=api_key, environment=environment)
 index = pc.Index("study-buddy")
@@ -39,9 +41,9 @@ redis_client.set("test", "hello")
 print(redis_client.get("test"))
 
 
-# -------------------------------
-# Load models ONCE (Huge speed boost)
-# -------------------------------
+
+# Loading model
+
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 
 # -------------------------------
@@ -60,22 +62,28 @@ def normalize_query(q: str) -> str:
 # -------------------------------
 # PDF Loading
 # -------------------------------
-def load_and_extract_text(file_path: str) -> str | None:
-    try:
-        print(f"Loading data from {file_path}...")
-        text = ""
-        with fitz.open(file_path) as doc:
-            for page in doc:
-                text += page.get_text()
-        print("Text extracted successfully.")
-        return text
-    except Exception as e:
-        print(f"Error reading file: {e}")
-        return None
+def load_and_extract_text(source: str) -> str | None:
+        print(f"Loading data from {source}...")
+        if source.startswith("http"):
+            response = requests.get(source, timeout=20)
+            response.raise_for_status()
+            file_stream = BytesIO(response.content)
+            doc = fitz.open(stream=file_stream, filetype="pdf")
+    # If local file
+        else:
+            if not os.path.exists(source):
+                raise FileNotFoundError(f"{source} not found")
+            doc = fitz.open(source)
 
-# -------------------------------
+        text = ""
+        for page in doc:
+            text += page.get_text()
+
+        return text.strip()
+
+
 # Chunking
-# -------------------------------
+
 
 #invoice chunking logic
 def invoice_chunker(text: str) -> list[str]:
@@ -121,26 +129,8 @@ def chunk_text(text: str, use_case:str = "study") -> list[str]:
     print(f"Created {len(chunks)} chunks.")
     return chunks
 
-# -------------------------------
+
 # Embedding Creation (CACHED)
-# -------------------------------
-# def create_embedding(chunks: list[str], use_case:str = "study"):
-#     print("Creating embeddings with cache...")
-#     embeddings = []
-
-#     for chunk in tqdm(chunks):
-#         key = f"{use_case}:embed:{text_hash(chunk)}"
-#         cached = redis_client.get(key)
-
-#         if cached:
-#             embeddings.append(json.loads(cached))
-#         else:
-#             emb = embedding_model.encode(chunk).tolist()
-#             redis_client.set(key, json.dumps(emb))
-#             embeddings.append(emb)
-
-#     print("Embeddings ready.")
-#     return embeddings
 
 ## reducing latency for embedding
 def create_embedding(chunks: list[str], use_case: str = "study"):
@@ -178,9 +168,9 @@ def create_embedding(chunks: list[str], use_case: str = "study"):
 
 
 
-# -------------------------------
+
 # Store in Pinecone
-# -------------------------------
+
 def store_in_pinecone(chunks: list[str], embeddings, use_case:str = "study"):
     print("Storing vectors in Pinecone...")
 
@@ -198,9 +188,9 @@ def store_in_pinecone(chunks: list[str], embeddings, use_case:str = "study"):
 
     print("Pinecone upsert complete.")
 
-# -------------------------------
+
 # Retrieval (CACHED)
-# -------------------------------
+
 def retrieve_from_pinecone(query: str, top_k: int = 5, use_case:str = "study") -> list[str]:
     cache_key = f"{use_case}:retrieval:{normalize_query(query)}"
     cached = redis_client.get(cache_key)
@@ -233,55 +223,8 @@ def retrieve_from_pinecone(query: str, top_k: int = 5, use_case:str = "study") -
 
     return chunks
 
-# -------------------------------
+
 # Answer Generation (CACHED)
-# -------------------------------
-# def generate_answer(query: str, context_chunks: list[str], chat_history, use_case:str = "study") -> str:
-#     cache_key = f"{use_case}:answer:{answer_hash(query, context_chunks)}"
-#     cached = redis_client.get(cache_key)
-
-#     if cached:
-#         print("Answer cache HIT")
-#         return cached
-
-#     print("Answer cache MISS → calling Gemini")
-
-#     api_key = os.getenv("GOOGLE_API_KEY")
-#     if not api_key:
-#         return "GOOGLE_API_KEY not set."
-
-#     genai.configure(api_key=api_key)
-#     model = genai.GenerativeModel("gemini-2.5-flash")
-
-#     context = "\n".join(context_chunks)
-
-#     history_text = ""
-#     for msg in chat_history:
-#         role = "User" if msg["sender"] == "user" else "Assistant"
-#         history_text += f"{role}: {msg['text']}\n"
-
-#     prompt = f"""
-# You are a helpful study assistant.
-# Answer strictly using the provided context.
-
-# Conversation History:
-# {history_text}
-
-# Context:
-# {context}
-
-# Question:
-# {query}
-# """
-
-#     try:
-#         response = model.generate_content(prompt)
-#         redis_client.setex(cache_key, 1800, response.text)  # 30 min
-#         return response.text
-#     except Exception as e:
-#         return f"Generation error: {e}"
-
-#multipurpose code with use_case:
 
 def generate_answer(
     query: str,
@@ -294,7 +237,9 @@ def generate_answer(
 
     if cached:
         print("Answer cache HIT")
-        return cached.decode("utf-8")  # Redis returns bytes
+        if isinstance(cached, bytes):
+            return cached.decode("utf-8")
+        return cached
 
     print("Answer cache MISS → calling Gemini")
 
@@ -313,7 +258,7 @@ def generate_answer(
         role = "User" if msg["sender"] == "user" else "Assistant"
         history_text += f"{role}: {msg['text']}\n"
 
-    # 🔁 Use-case–specific system prompt
+    # Use-case–specific system prompt
     
     if use_case == "invoice":
         print("Using invoice system prompt.")
@@ -363,29 +308,6 @@ Question:
 
 
 if __name__ == "__main__":
-
-    # file_path = "C:\\Users\\Harsh Kumar\\Desktop\\GenAi Projects\\Personalised_study_buddy\\Upload_path\\sample.pdf"
-    # extracted_text = load_and_extract_text(file_path)
-
-    # if extracted_text:
-    #     text_chunks = chunk_text(extracted_text)
-    #     print("Total Number of chunks created:",len(text_chunks))
-
-
-    #     if text_chunks:
-    #         print("first chunk :", text_chunks[0])
-    #         embeddings = create_embedding(text_chunks)
-
-    #         print("Embedding....")
-
-    #         print(f"Shape of the embeddings array:", {embeddings.shape})
-
-    #         # print("First embedding vector...")
-    #         # print(embeddings[0])
-    #         if embeddings is not None:
-    #             store_in_pinecone(text_chunks, embeddings)
-
-    # data stored in pinecone so no need of above codes
 
     while True:
         

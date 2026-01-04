@@ -1,107 +1,21 @@
-# import uuid
-# from flask import Flask, request, jsonify
-# from flask_cors import CORS 
-# import os
-# import time
-# from dotenv import load_dotenv
-# from ingestion.pipeline import ingest_pipeline
-# from ingestion.executor import executor
-# from file_processor import retrieve_from_pinecone, generate_answer
-
-# app = Flask(__name__)
-# CORS(app)  # This will enable CORS for all routes
-
-# UPLOAD_FOLDER = "Upload_path"
-# if not os.path.exists(UPLOAD_FOLDER):
-#     os.makedirs(UPLOAD_FOLDER)
-
-# app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-# print("Flask app initialized.")
-
-# #file uploading api
-
-# @app.route('/upload', methods=['POST'])
-# def upload_and_process():
-#     print("Received a file upload request.")
-
-#     use_case = request.form.get('use_case', 'study')
-
-#     #base cases
-#     if 'file' not in request.files:
-#         return jsonify({"error": "No selected file"}),400
-    
-#     file = request.files['file']
-#     if file.filename == '':
-#         return jsonify({"error": "No selected file"}),400
-
-
-#     if file:
-#         filename = f"{uuid.uuid4()}_{file.filename}"
-#         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-#         file.save(filepath)
-
-#         try:
-#              #ASYNC ingestion
-#             executor.submit(ingest_pipeline, filepath, use_case)
-#             return jsonify({
-#                 "message": "File uploaded. Processing started."
-#             }), 202
-#             # print("Ingestion complete")
-#         except Exception as e:
-#             print(f"An error occured : {e}")
-#             return jsonify({"error": f"An error occured during processing: {e}"}),500
-
-# print("Upload endpoint is ready.")
-
-# #api for chat questioning
-
-# @app.route('/chat', methods=['POST'])
-
-# def chat():
-#     print("Received a chat Request")
-#     data = request.get_json()
-#     use_case = data.get('use_case', 'study')
-#     # print(f"Received data: {data}")
-#     user_question = data.get('question')
-
-#     chat_history = data.get('history', [])  
-
-#     if not user_question:
-#         return jsonify({"error": "No question provided."}), 400
-    
-#     try:
-#         retrieved_chunks = retrieve_from_pinecone(user_question, use_case=use_case)
-#         # generate_answer expects (query:str, context_chunks:list[str], chat_history)
-#         final_answer = generate_answer(user_question, retrieved_chunks, chat_history, use_case=use_case)
-
-#         return jsonify({"answer": final_answer, "sources": retrieved_chunks}), 200
-
-#     except Exception as e:
-#         print(f"An error ocurred: {e}")
-#         return jsonify({"error": str(e)}),500
-
-# print("Chat endpoint is ready")
-
-#fastapi configured
 
 import uuid
 import os
 from dotenv import load_dotenv
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException  # CHANGED (FastAPI imports)
-from fastapi.middleware.cors import CORSMiddleware  # CHANGED (CORS for FastAPI)
-from fastapi.responses import JSONResponse  # CHANGED (response handling)
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException  
+from fastapi.middleware.cors import CORSMiddleware  
+from fastapi.responses import JSONResponse  
 
 from ingestion.pipeline import ingest_pipeline
 from ingestion.executor import executor
 from file_processor import retrieve_from_pinecone, generate_answer
+from config.cloudinary import cloudinary  
 
 load_dotenv()
 
-app = FastAPI()  # CHANGED (Flask ➜ FastAPI)
+app = FastAPI()  
 
-# CHANGED (FastAPI CORS setup)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -110,33 +24,40 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-UPLOAD_FOLDER = "Upload_path"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-print("FastAPI app initialized.")  # CHANGED (log text)
+print("FastAPI app initialized.")  
 
-# ---------------- FILE UPLOAD API ---------------- #
+# FILE UPLOAD API 
 
-@app.post("/upload", status_code=202)  # CHANGED (FastAPI decorator + 202 status)
+@app.post("/upload", status_code=202)  
 async def upload_and_process(
-    file: UploadFile = File(...),      # CHANGED (FastAPI file handling)
-    use_case: str = Form("study")       # CHANGED (form field)
+    file: UploadFile = File(...),     
+    use_case: str = Form("study")       
 ):
     print("Received a file upload request.")
 
     if not file.filename:
-        raise HTTPException(status_code=400, detail="No selected file")  # CHANGED
-
-    filename = f"{uuid.uuid4()}_{file.filename}"
-    filepath = os.path.join(UPLOAD_FOLDER, filename)
-
-    # CHANGED (FastAPI async file save)
-    with open(filepath, "wb") as f:
-        f.write(await file.read())
+        raise HTTPException(status_code=400, detail="No selected file")  
 
     try:
+        filename = f"{uuid.uuid4()}_{file.filename}"
+
+        #upload to cloudinary
+        upload_result = cloudinary.uploader.upload(
+            file.file,
+            resource_type="raw",
+            public_id=filename,
+            folder=f"{use_case}/uploads"
+            # async=True,
+            # quality="auto"
+        )
+
+        file_url = upload_result.get("secure_url")
+        print(f"File uploaded to Cloudinary: {file_url}")   
+
+
         # ASYNC ingestion (unchanged logic)
-        executor.submit(ingest_pipeline, filepath, use_case)
+        executor.submit(ingest_pipeline, file_url, use_case)
 
         return {
             "message": "File uploaded. Processing started."
@@ -144,15 +65,15 @@ async def upload_and_process(
 
     except Exception as e:
         print(f"An error occurred: {e}")
-        raise HTTPException(status_code=500, detail=str(e))  # CHANGED
+        raise HTTPException(status_code=500, detail=str(e)) 
 
 
 print("Upload endpoint is ready.")
 
-# ---------------- CHAT API ---------------- #
+# CHAT API
 
-@app.post("/chat")  # CHANGED (FastAPI decorator)
-async def chat(payload: dict):  # CHANGED (request.json ➜ body dict)
+@app.post("/chat") 
+async def chat(payload: dict): 
     print("Received a chat Request")
 
     use_case = payload.get("use_case", "study")
@@ -160,7 +81,7 @@ async def chat(payload: dict):  # CHANGED (request.json ➜ body dict)
     chat_history = payload.get("history", [])
 
     if not user_question:
-        raise HTTPException(status_code=400, detail="No question provided.")  # CHANGED
+        raise HTTPException(status_code=400, detail="No question provided.")  
 
     try:
         retrieved_chunks = retrieve_from_pinecone(
@@ -181,7 +102,7 @@ async def chat(payload: dict):  # CHANGED (request.json ➜ body dict)
 
     except Exception as e:
         print(f"An error occurred: {e}")
-        raise HTTPException(status_code=500, detail=str(e))  # CHANGED
+        raise HTTPException(status_code=500, detail=str(e))  
 
 
 print("Chat endpoint is ready")

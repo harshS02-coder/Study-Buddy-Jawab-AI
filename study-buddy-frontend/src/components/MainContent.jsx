@@ -1,7 +1,8 @@
 import FileUpload from "./FileUpload";
 import ChatWindow from "./chatWindow";
 
-function MainContent({ isFileUploaded, handleUploadSuccess, activeMode }) {
+function MainContent({ isFileUploaded, handleUploadSuccess, onUploadNewDocument, activeMode }) {
+
     return (
         <main className="content">
                 {!isFileUploaded ? (
@@ -32,8 +33,21 @@ function MainContent({ isFileUploaded, handleUploadSuccess, activeMode }) {
                 ) : (
                   <section className="glass-card chat-card">
                     <div className="chat-header">
-                      <h2 className="section-title">Your Study Session</h2>
-                      <p className="section-help">Ask anything from the uploaded document</p>
+                      <div className="chat-header-left">
+                        <h2 className="section-title">Your Q&A Session</h2>
+                        <p className="section-help">Ask anything from the uploaded document</p>
+                      </div>
+
+                      <button
+                        className="upload-new-btn"
+                        onClick={() => {
+                          if (typeof onUploadNewDocument === "function") {
+                            onUploadNewDocument();
+                          }
+                        }}
+                      >
+                        Upload New Document
+                      </button>
                     </div>
                     <ChatWindow activeMode={activeMode}/>
                   </section>

@@ -1,15 +1,13 @@
 from file_processor import (load_and_extract_text, chunk_text, create_embedding, store_in_pinecone)
 import time
+from io import BytesIO
 
-def ingest_pipeline(filepath: str, use_case: str):
+def ingest_pipeline(file_url, use_case: str):
     print(f"Starting the pipeline...")
-
-
-
     t_total_start = time.perf_counter()
 
     t0 = time.perf_counter()
-    text = load_and_extract_text(filepath) 
+    text = load_and_extract_text(file_url) 
     t1 = time.perf_counter()
     extract_ms = round((t1 - t0) * 1000)
 
