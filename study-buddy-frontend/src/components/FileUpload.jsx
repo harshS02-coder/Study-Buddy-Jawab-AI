@@ -6,6 +6,7 @@ function FileUpload({ onUploadSuccess, activeMode }) {
   const [message, setMessage] = useState('');
   const [isUploading, setIsUploading] = useState(false);
 
+
   const handleFileChange = (event) => {
     setFile(event.target.files[0]);
   };
@@ -47,7 +48,9 @@ function FileUpload({ onUploadSuccess, activeMode }) {
 
   return (
     <div className="file-upload-container">
-      <h2>Upload Your Study Document</h2>
+      <h2>Upload Your 
+        {activeMode === 'study' ? ' Study Material' : ' Invoice'}
+      </h2>
       <form onSubmit={handleSubmit}>
         <input type="file" accept=".pdf" onChange={handleFileChange} />
         <button type="submit" disabled={isUploading}>
