@@ -14,3 +14,4 @@ chroma_db/
 
 #frontend dependencies
 study-buddy-frontend/node_modules/
+study-buddy-frontend/.env

@@ -1,5 +1,6 @@
 // src/components/FileUpload.jsx
 import React, { useState } from 'react';
+import axios from 'axios';
 
 function FileUpload({ onUploadSuccess, activeMode }) {
   const [file, setFile] = useState(null);
@@ -25,22 +26,14 @@ function FileUpload({ onUploadSuccess, activeMode }) {
     formData.append('use_case', activeMode);
 
     try {
-      const response = await fetch('http://127.0.0.1:5300/upload', {
-        method: 'POST',
-        body: formData,
-      });
+      const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/upload`, formData);
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setMessage(data.message);
-        onUploadSuccess(); // Notify the parent component
-      } else {
-        setMessage(`Error: ${data.error}`);
-      }
+      setMessage(response.data?.message || 'Upload successful');
+      onUploadSuccess(); // Notify the parent component
     } catch (error) {
-      setMessage('An error occurred during upload.');
       console.error('Upload error:', error);
+      const serverMsg = error.response?.data?.error || error.response?.data?.message;
+      setMessage(serverMsg ? `Error: ${serverMsg}` : 'An error occurred during upload.');
     } finally {
       setIsUploading(false);
     }

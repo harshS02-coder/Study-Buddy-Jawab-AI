@@ -1,5 +1,6 @@
 // src/components/ChatWindow.jsx
 import React, { useState } from 'react';
+import axios from 'axios';
 
 // New sub-component for displaying sources
 function Sources({ chunks }) {
@@ -49,12 +50,12 @@ function ChatWindow({ activeMode }) {
 
       const history = updatedMessages.slice(-5,-1);
 
-      const response = await fetch('http://127.0.0.1:5300/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: input, history: history , use_case: activeMode }),
+      const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/chat`, {
+        question: input,
+        history: history,
+        use_case: activeMode,
       });
-      const data = await response.json();
+      const data = response.data;
 
       const aiMessage = { 
         sender: 'ai', 
