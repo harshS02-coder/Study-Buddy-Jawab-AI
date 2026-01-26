@@ -9,6 +9,7 @@ import './App.css';
 function App() {
   const [isFileUploaded, setIsFileUploaded] = useState(false);
   const [activeMode, setActiveMode] = useState('study');
+  const [documentId, setDocumentId] = useState(null);
 
   const [theme, setTheme] = useState(() => {
     const stored = typeof window !== 'undefined' ? localStorage.getItem('theme') : null;
@@ -22,8 +23,9 @@ function App() {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
-  const handleUploadSuccess = () => {
+  const handleUploadSuccess = (documentId) => {
     setIsFileUploaded(true);
+    setDocumentId(documentId);
   };
 
   const handleNewDocument = () => {
@@ -44,6 +46,7 @@ function App() {
         handleUploadSuccess={handleUploadSuccess}
         onUploadNewDocument={handleNewDocument}
         activeMode={activeMode}
+        documentId={documentId}
       />
 
       <footer className="App-footer">

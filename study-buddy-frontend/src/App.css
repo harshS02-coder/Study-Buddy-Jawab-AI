@@ -567,4 +567,215 @@ body.theme-dark .upload-new-btn {
   border-left: 3px solid #ccc;
   padding-left: 10px;
 }
+
+/* File Upload Enhanced Styles */
+.file-upload-container {
+  margin-top: 16px;
+}
+
+.file-upload-area {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.file-input-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  border: 0;
+}
+
+.file-upload-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  border: 2px dashed #c7d2fe;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #f8faff 0%, #f0f4ff 100%);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.file-upload-label::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(13, 97, 255, 0.05), transparent);
+  transition: left 0.5s ease;
+}
+
+.file-upload-label:hover {
+  border-color: #0d61ff;
+  background: linear-gradient(135deg, #f0f4ff 0%, #e6f0ff 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(13, 97, 255, 0.12);
+}
+
+.file-upload-label:hover::before {
+  left: 100%;
+}
+
+.upload-icon-wrapper {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0d61ff 0%, #6366f1 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 20px rgba(13, 97, 255, 0.25);
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.upload-icon {
+  width: 40px;
+  height: 40px;
+  color: white;
+  stroke-width: 2;
+}
+
+.upload-text {
+  text-align: center;
+}
+
+.upload-title {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.upload-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.upload-submit-btn {
+  width: 100%;
+  padding: 14px 24px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0d61ff 0%, #0c58e6 100%);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 6px 20px rgba(13, 97, 255, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-submit-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s ease, height 0.6s ease;
+}
+
+.upload-submit-btn:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.upload-submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(13, 97, 255, 0.4);
+}
+
+.upload-submit-btn:disabled {
+  background: linear-gradient(135deg, #9ac3f9 0%, #8bb5ec 100%);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.btn-icon {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.upload-message {
+  margin-top: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  text-align: center;
+  background: #eef2ff;
+  color: #4f46e5;
+  border: 1px solid #c7d2fe;
+}
+
+/* Dark theme overrides for file upload */
+body.theme-dark .file-upload-label {
+  background: linear-gradient(135deg, #1a1f2e 0%, #0f1419 100%);
+  border-color: #475569;
+}
+
+body.theme-dark .file-upload-label:hover {
+  border-color: #2563eb;
+  background: linear-gradient(135deg, #1f2937 0%, #1a1f2e 100%);
+}
+
+body.theme-dark .upload-title {
+  color: #e5e7eb;
+}
+
+body.theme-dark .upload-subtitle {
+  color: #9aa4b2;
+}
+
+body.theme-dark .upload-message {
+  background: #1e293b;
+  color: #818cf8;
+  border-color: #475569;
+}
+
 /* Cleaned trailing legacy styles removed */
