@@ -1,7 +1,7 @@
 import FileUpload from "./FileUpload";
 import ChatWindow from "./chatWindow";
 
-function MainContent({ isFileUploaded, handleUploadSuccess, onUploadNewDocument, activeMode }) {
+function MainContent({ isFileUploaded, handleUploadSuccess, onUploadNewDocument, activeMode , documentId}) {
 
     return (
         <main className="content">
@@ -49,7 +49,7 @@ function MainContent({ isFileUploaded, handleUploadSuccess, onUploadNewDocument,
                         Upload New Document
                       </button>
                     </div>
-                    <ChatWindow activeMode={activeMode}/>
+                    <ChatWindow activeMode={activeMode} documentId={documentId} />
                   </section>
                 )}
               </main>

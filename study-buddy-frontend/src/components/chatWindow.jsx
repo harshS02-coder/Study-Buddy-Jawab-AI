@@ -29,7 +29,7 @@ function Sources({ chunks }) {
   );
 }
 
-function ChatWindow({ activeMode }) {
+function ChatWindow({ activeMode, documentId }) {
   const [messages, setMessages] = useState([
     { sender: 'ai', text: 'I have read your document. Ask me anything!' }
   ]);
@@ -54,6 +54,7 @@ function ChatWindow({ activeMode }) {
         question: input,
         history: history,
         use_case: activeMode,
+        document_id: documentId // You can modify this to pass the actual document ID if needed
       });
       const data = response.data;
 
